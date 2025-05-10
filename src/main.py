@@ -1,11 +1,9 @@
 from textnode import TextNode, TextType
-from nodehelper import split_text_nodes_by
-
+from nodehelper import text_to_textnodes
+import pprint
 
 def main():
-    node = TextNode("This is text with a `code block` word", TextType.TEXT)
-    new_nodes = split_text_nodes_by([node], "`", TextType.CODE)
-    print(new_nodes)
+    pprint.pp(text_to_textnodes("This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"))
 
 
 main()
