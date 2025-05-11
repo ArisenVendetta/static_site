@@ -1,9 +1,18 @@
 from textnode import TextNode, TextType
-from nodehelper import text_to_textnodes
+from nodehelper import markdown_to_blocks
 import pprint
 
 def main():
-    pprint.pp(text_to_textnodes("This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"))
+    md = """
+This is **bolded** paragraph
+
+This is another paragraph with _italic_ text and `code` here
+This is the same paragraph on a new line
+
+- This is a list
+- with items
+"""
+    pprint.pp(markdown_to_blocks(md))
 
 
 main()

@@ -1,3 +1,4 @@
+from blocknode import BlockNode, BlockType, HeaderNode, CodeNode, QuoteNode, ListNode
 from textnode import TextNode, TextType
 from htmlnode import HTMLNode, LeafNode, ParentNode
 import re
@@ -98,6 +99,7 @@ def split_nodes(nodes: list[TextNode], extraction_func, pattern: str, resulting_
     
     return updated_nodes
 
+
 def text_to_textnodes(text: str) -> list[TextNode]:
     nodes = [TextNode(text, TextType.TEXT)]
     nodes = split_text_nodes_by(nodes.copy(), '**', TextType.BOLD)
@@ -107,9 +109,65 @@ def text_to_textnodes(text: str) -> list[TextNode]:
     nodes = split_nodes_images(nodes.copy())
     return nodes
 
+
 def extract_markdown_images(content: str) -> tuple[str, str]: #not sure why but when pattern is loaded from constants.py it fails to match anything
     return re.findall(r'!\[([^\]]+)\]\(([^\)]+)\)', content)  # so for now, keeping pattern locally
 
 
 def extract_markdown_links(content: str) -> tuple[str, str]: #not sure why but when pattern is loaded from constants.py it fails to match anything
     return re.findall(r'(?<!!)\[([^\]]+)\]\(([^\)]+)\)', content) # so for now, keeping pattern locally
+
+
+def markdown_to_blocks(markdown: str) -> list[BlockNode]:
+    blocks = [BlockNode(block.strip(), BlockType.PARAGRAPH) for block in markdown.split('\n\n')]
+    return blocks
+
+
+def block_to_blocktype(block: BlockNode) -> BlockNode:
+    if block is None:
+        raise ValueError('provided block is nonetype')
+    
+    is_header = check_if_block_is_header(block.content)
+    if is_header[0]:
+        return HeaderNode(block.content, is_header[1])
+    elif check_if_block_is_code(block):
+        return CodeNode(block.content)
+    elif check_if_block_is_quote(block):
+        return QuoteNode(block.content)
+    elif check_if_block_is_list(block, ordered=False):
+        return ListNode(block.content, ordered=False)
+    elif check_if_block_is_list(block, ordered=True):
+        return ListNode(block.content, ordered=True)
+    else:
+        return block
+        
+
+def check_if_block_is_header(block: BlockNode) -> tuple[bool, int]:
+    line_sections = block.content.split(' ')
+    if line_sections[0].startswith('#'):
+        return (True, len(line_sections[0]))
+    return (False, -1)
+
+
+def check_if_block_is_code(block: BlockNode) -> bool:
+    return block.content.startswith('```') and block.content.endswith('```')
+
+
+def check_if_block_is_quote(block: BlockNode) -> bool:
+    for line in block.lines:
+        if line.startswith('>') == False:
+            return False
+    return True
+
+
+def check_if_block_is_list(block: BlockNode, ordered: bool) -> bool:
+    prefix = '. ' if ordered else '- ' 
+    for line in block.lines:
+        if line.startswith(prefix) == False:
+            return False
+    return True
+
+
+def markdown_to_html_node(markdown: str):
+    blocks = [block_to_blocktype(block) for block in markdown_to_blocks(markdown)]
+    

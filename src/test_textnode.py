@@ -1,5 +1,6 @@
 import unittest
 from textnode import TextNode, TextType
+from blocknode import BlockNode, BlockType
 from nodehelper import convert_text_node_to_html_node
 from nodehelper import split_text_nodes_by
 from nodehelper import extract_markdown_links
@@ -7,6 +8,7 @@ from nodehelper import extract_markdown_images
 from nodehelper import split_nodes_links
 from nodehelper import split_nodes_images
 from nodehelper import text_to_textnodes
+from nodehelper import markdown_to_blocks
 
 
 class TestTextNode(unittest.TestCase):
@@ -15,15 +17,18 @@ class TestTextNode(unittest.TestCase):
         node2 = TextNode('This is a text node', TextType.BOLD)
         self.assertEqual(node, node2)
 
+
     def test_neq(self):
         node = TextNode('This is a link node', TextType.LINK)
         node2 = TextNode('This is a link node', TextType.LINK, 'some_link')
         self.assertNotEqual(node, node2)
 
+
     def test_neq2(self):
         node = TextNode('This is a text node', TextType.BOLD)
         node2 = TextNode('This is another text node', TextType.BOLD)
         self.assertNotEqual(node, node2)
+
 
     def test_text(self):
         node = TextNode("This is a text node", TextType.TEXT)
@@ -31,6 +36,7 @@ class TestTextNode(unittest.TestCase):
         self.assertEqual(html_node.tag, None)
         self.assertEqual(html_node.value, "This is a text node")
     
+
     def test_split_nodes(self):
         node = TextNode("This is text with a `code block` word", TextType.TEXT)
         new_nodes = split_text_nodes_by([node], "`", TextType.CODE)
@@ -42,6 +48,7 @@ class TestTextNode(unittest.TestCase):
         ]
 
         self.assertListEqual(new_nodes, check)
+
 
     def test_extract_markdown_images(self):
         matches = extract_markdown_images("This is text with an ![image](https://i.imgur.com/zjjcJKZ.png)")
@@ -56,12 +63,14 @@ class TestTextNode(unittest.TestCase):
         matches = extract_markdown_images("This is text with a link [to boot dev](https://www.boot.dev) and [to youtube](https://www.youtube.com/@bootdotdev)")
         self.assertListEqual([], matches)
 
+
     def test_extract_markdown_links(self):
         matches = extract_markdown_links("This is text with a link [to boot dev](https://www.boot.dev) and [to youtube](https://www.youtube.com/@bootdotdev)")
         self.assertListEqual(
             [('to boot dev', 'https://www.boot.dev'), ('to youtube', 'https://www.youtube.com/@bootdotdev')],
             matches
         )
+
 
     def test_split_images(self):
         node = TextNode(
@@ -79,6 +88,7 @@ class TestTextNode(unittest.TestCase):
             new_nodes,
         )
 
+
     def test_split_links(self):
         node = TextNode(
             "This is text with a link [to boot dev](https://www.boot.dev) and [to youtube](https://www.youtube.com/@bootdotdev)",
@@ -94,6 +104,7 @@ class TestTextNode(unittest.TestCase):
             ],
             new_nodes,
         )
+
 
     def test_split_text_to_nodes(self):
         text = "This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
@@ -112,6 +123,28 @@ class TestTextNode(unittest.TestCase):
 
         output = text_to_textnodes(text)
         self.assertListEqual(expected, output)
+
+
+    def test_markdown_to_blocks(self):
+        md = """
+This is **bolded** paragraph
+
+This is another paragraph with _italic_ text and `code` here
+This is the same paragraph on a new line
+
+- This is a list
+- with items
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                BlockNode("This is **bolded** paragraph"),
+                BlockNode("This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line"),
+                BlockNode("- This is a list\n- with items"),
+            ],
+        )
+
 
 
 if __name__ == '__main__':
