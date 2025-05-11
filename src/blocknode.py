@@ -1,6 +1,5 @@
 from enum import Enum
 from textnode import TextNode
-from nodehelper import text_to_textnodes
 
 class BlockType(Enum):
     HEADING = "heading"
@@ -16,6 +15,9 @@ class BlockNode:
         self.content = content
         self.block_type = block_type
         self.lines = content.split('\n')
+
+    def to_html(self):
+        pass
 
     def __repr__(self):
         return f'BlockNode({self.content}, {self.block_type.value})'
@@ -36,7 +38,7 @@ class HeaderNode(BlockNode):
 
 class CodeNode(BlockNode):
     def __init__(self, content: str):
-        super().__init__(content.strip('```'), BlockType.CODE)
+        super().__init__(content.strip('```').strip(), BlockType.CODE)
 
 
 class QuoteNode(BlockNode):
@@ -46,6 +48,6 @@ class QuoteNode(BlockNode):
 
 class ListNode(BlockNode):
     def __init__(self, content: str, ordered: bool):
-        self.prefix = '. ' if ordered else '- '
+        self.__prefix = '. ' if ordered else '- '
         self.block_type = BlockType.ORDERED_LIST if ordered else BlockType.UNORDERED_LIST
-        super().__init__('\n'.join([line.lstrip(self.prefix) for line in content.split('\n')], self.block_type))
+        super().__init__('\n'.join([line.lstrip(self.__prefix) for line in content.split('\n')]), self.block_type)

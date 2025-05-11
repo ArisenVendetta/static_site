@@ -119,7 +119,7 @@ def extract_markdown_links(content: str) -> tuple[str, str]: #not sure why but w
 
 
 def markdown_to_blocks(markdown: str) -> list[BlockNode]:
-    blocks = [BlockNode(block.strip(), BlockType.PARAGRAPH) for block in markdown.split('\n\n')]
+    blocks = [BlockNode(block.strip(), BlockType.PARAGRAPH) for block in markdown.split('\n\n') if block.strip() != '']
     return blocks
 
 
@@ -127,7 +127,7 @@ def block_to_blocktype(block: BlockNode) -> BlockNode:
     if block is None:
         raise ValueError('provided block is nonetype')
     
-    is_header = check_if_block_is_header(block.content)
+    is_header = check_if_block_is_header(block)
     if is_header[0]:
         return HeaderNode(block.content, is_header[1])
     elif check_if_block_is_code(block):
@@ -168,6 +168,25 @@ def check_if_block_is_list(block: BlockNode, ordered: bool) -> bool:
     return True
 
 
-def markdown_to_html_node(markdown: str):
+def markdown_to_html_node(markdown: str) -> ParentNode:
     blocks = [block_to_blocktype(block) for block in markdown_to_blocks(markdown)]
-    
+    children = []
+    for block in blocks:
+        if isinstance(block, HeaderNode):
+            children.append(LeafNode(f'h{block.header_size}', block.content))
+        elif isinstance(block, CodeNode):
+            code = LeafNode('code', block.content)
+            children.append(ParentNode('pre', [code]))
+        elif isinstance(block, ListNode):
+            list_items = []
+            for line in block.lines:
+                child_nodes = [convert_text_node_to_html_node(node) for node in text_to_textnodes(line)]
+                list_items.append(ParentNode('li', child_nodes))
+            children.append(ParentNode('ol' if block.block_type == BlockType.ORDERED_LIST else 'ul', list_items))
+        elif isinstance(block, QuoteNode):
+            child_nodes = [convert_text_node_to_html_node(node) for node in text_to_textnodes(block.content)]
+            children.append(ParentNode('blockquote', child_nodes))
+        else:
+            child_nodes = [convert_text_node_to_html_node(node) for node in text_to_textnodes(block.content)]
+            children.append(ParentNode('p', child_nodes))
+    return ParentNode('div', children)

@@ -10,11 +10,14 @@ class HTMLNode:
     
     def props_to_html(self):
         if self.props is None:
-            return ""
+            return ''
         return ' ' + ' '.join([f'{k}="{v}"' for k, v in self.props.items()])
     
     def __repr__(self):
-        print(f'tag: {self.tag}, value: {self.value}, children: {self.children}, props: {self.props_to_html()}')
+        child_string = '' if self.children is None else self.children
+        value_string = '' if self.value is None else self.value
+        tag_string = '' if self.tag is None else self.tag
+        return f'tag: {tag_string}, value: {value_string}, children: {child_string}, props: {self.props_to_html()}'
 
 
 class LeafNode(HTMLNode):
