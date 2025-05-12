@@ -1,6 +1,6 @@
 from blocknode import BlockNode, BlockType, HeaderNode, CodeNode, QuoteNode, ListNode
 from textnode import TextNode, TextType
-from htmlnode import HTMLNode, LeafNode, ParentNode
+from htmlnode import HTMLNode, LeafNode, ParentNode, ImageNode
 import re
 from constants import *
 import pprint
@@ -19,7 +19,7 @@ def convert_text_node_to_html_node(node: TextNode) -> HTMLNode:
         case TextType.LINK:
             return LeafNode('a', node.text, {'href': node.url})
         case TextType.IMAGE:
-            return LeafNode('img', None, {'src': node.url, 'alt': node.text})
+            return ImageNode(node.url, node.text)
     raise Exception(f'invalid node type ({node.text_type.value})')
 
 
@@ -46,21 +46,21 @@ def split_text_nodes_by(nodes: list[TextNode], delimiter: str, text_type: TextTy
     return updated_nodes
 
 
-def split_nodes_links(nodes: list[TextNode]): #not sure why but when pattern is loaded from constants.py it fails to match anything
+def split_nodes_links(nodes: list[TextNode]) -> list[TextNode]: #not sure why but when pattern is loaded from constants.py it fails to match anything
     return split_nodes(nodes, 
                        extract_markdown_links, 
                        r'((?<!!)\[[^\]]+\]\([^\)]+\))', # so for now, keeping pattern locally
                        TextType.LINK) 
 
 
-def split_nodes_images(nodes: list[TextNode]): #not sure why but when pattern is loaded from constants.py it fails to match anything
+def split_nodes_images(nodes: list[TextNode]) -> list[TextNode]: #not sure why but when pattern is loaded from constants.py it fails to match anything
     return split_nodes(nodes, 
                        extract_markdown_images, 
                        r'(!\[[^\]]+\]\([^\)]+\))', # so for now, keeping pattern locally
                        TextType.IMAGE) 
 
 
-def split_nodes(nodes: list[TextNode], extraction_func, pattern: str, resulting_node_type: TextType):
+def split_nodes(nodes: list[TextNode], extraction_func, pattern: str, resulting_node_type: TextType) -> list[TextNode]:
     updated_nodes = []
 
     if len(pattern) < 1 or pattern is None:
@@ -161,9 +161,9 @@ def check_if_block_is_quote(block: BlockNode) -> bool:
 
 
 def check_if_block_is_list(block: BlockNode, ordered: bool) -> bool:
-    prefix = '. ' if ordered else '- ' 
+    pattern = '^- ' if not ordered else '^\d+\. '
     for line in block.lines:
-        if line.startswith(prefix) == False:
+        if re.match(pattern, line) is None:
             return False
     return True
 

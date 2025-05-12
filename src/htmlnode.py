@@ -31,6 +31,21 @@ class LeafNode(HTMLNode):
             return self.value
         return f'<{self.tag}{self.props_to_html()}>{self.value}</{self.tag}>'
     
+class ImageNode(HTMLNode):
+    def __init__(self, src: str, alt_text: str = None, props: dict[str, str] = None):
+        super().__init__('img', None, None, props)
+        self.source = src
+        self.alt_text = alt_text
+        if self.props is None:
+            self.props = {}
+        self.props['src'] = self.source
+        self.props['alt'] = self.alt_text
+
+    def to_html(self):
+        if self.source is None or len(self.source) < 1:
+            raise ValueError('all image nodes must have a src')
+        return f'<{self.tag}{self.props_to_html()}>'
+    
 
 class ParentNode(HTMLNode):
     def __init__(self, tag: str, children: list['HTMLNode'], props: dict[str, str] = None):

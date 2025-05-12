@@ -32,7 +32,7 @@ class BlockNode:
 
 class HeaderNode(BlockNode):
     def __init__(self, content: str, header_size: int):
-        super().__init__(content, BlockType.HEADING)
+        super().__init__(content.lstrip('#').strip(), BlockType.HEADING)
         self.header_size = header_size
 
 
@@ -43,11 +43,15 @@ class CodeNode(BlockNode):
 
 class QuoteNode(BlockNode):
     def __init__(self, content: str):
-        super().__init__('\n'.join([line.lstrip('>') for line in content.split('\n')]), BlockType.QUOTE)
+        super().__init__('\n'.join([line.lstrip('>').strip() for line in content.split('\n')]), BlockType.QUOTE)
 
 
 class ListNode(BlockNode):
     def __init__(self, content: str, ordered: bool):
-        self.__prefix = '. ' if ordered else '- '
         self.block_type = BlockType.ORDERED_LIST if ordered else BlockType.UNORDERED_LIST
-        super().__init__('\n'.join([line.lstrip(self.__prefix) for line in content.split('\n')]), self.block_type)
+
+        stripped_lines = []
+        for line in content.split('\n'):
+            stripped_lines.append(' '.join(line.split(' ')[1:]).strip())
+
+        super().__init__('\n'.join(stripped_lines), self.block_type)
