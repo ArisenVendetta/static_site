@@ -187,6 +187,9 @@ def markdown_to_html_node(markdown: str) -> ParentNode:
             child_nodes = [convert_text_node_to_html_node(node) for node in text_to_textnodes(block.content)]
             children.append(ParentNode('blockquote', child_nodes))
         else:
-            child_nodes = [convert_text_node_to_html_node(node) for node in text_to_textnodes(block.content)]
+            child_nodes = []
+            text_nodes = text_to_textnodes(block.content.replace('\n', ' '))
+            for node in text_nodes:
+                child_nodes.append(convert_text_node_to_html_node(node))
             children.append(ParentNode('p', child_nodes))
     return ParentNode('div', children)
