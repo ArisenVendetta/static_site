@@ -1,13 +1,12 @@
-from textnode import TextNode, TextType
-from nodehelper import markdown_to_html_node
-import pprint
 import os
+import sys
 import shutil
 from pathlib import Path
+from nodehelper import markdown_to_html_node
+
+SITE_PATH = sys.argv[1] if len(sys.argv) > 1 else '/'
 
 def copy_files_from_source_to_destination(source_directory: str, destination_directory: str) -> None:
-    # print(f'DBG_src: {os.path.abspath(source_directory)}')
-    # print(f'DBG_dst: {os.path.abspath(destination_directory)}')
     if not os.path.exists(source_directory):
         raise FileNotFoundError(f"source_directory doesn't exist: {source_directory}")
     if not os.path.exists(destination_directory):
@@ -62,11 +61,13 @@ def generate_page(from_path: str, template_path: str, destination_path: str, del
     title = extract_title(source_content)
     page_content = markdown_to_html_node(source_content).to_html()
     updated_content = template_content.replace('{{ Title }}', title).replace('{{ Content }}', page_content)
+    updated_content = updated_content.replace('href="/', f'href="{SITE_PATH}')
     with open(destination_path, 'w+') as output:
         output.write(updated_content)
 
 def generate_pages_recursive(from_path: str, template_path: str, destination_path: str) -> None:
-    content_files = os.listdir(from_path)
+    source_path = Path(from_path)
+    content_files = os.listdir(source_path.absolute())
     for content_file in content_files:
         content_path = Path(os.path.join(from_path, content_file))
         if os.path.isdir(content_path.absolute()):
@@ -91,8 +92,9 @@ def open_and_read_content(source_file: str) -> str:
 
 
 def main():
-    copy_files_from_source_to_destination('static/', 'public/')
-    generate_pages_recursive('content/', 'template.html', 'public/')
+    copy_files_from_source_to_destination('static/', 'docs/')
+    generate_pages_recursive('content/', 'template.html', 'docs/')
 
 
-main()
+if __name__ == '__main__':
+    main()
