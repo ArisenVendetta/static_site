@@ -61,7 +61,7 @@ def generate_page(from_path: str, template_path: str, destination_path: str, del
     title = extract_title(source_content)
     page_content = markdown_to_html_node(source_content).to_html()
     updated_content = template_content.replace('{{ Title }}', title).replace('{{ Content }}', page_content)
-    updated_content = updated_content.replace('href="/', f'href="{SITE_PATH}')
+    updated_content = updated_content.replace('href="/', f'href="{SITE_PATH}').replace('src="/', f'src="{SITE_PATH}')
     with open(destination_path, 'w+') as output:
         output.write(updated_content)
 
