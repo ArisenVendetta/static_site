@@ -107,7 +107,18 @@ def text_to_textnodes(text: str) -> list[TextNode]:
     nodes = split_text_nodes_by(nodes.copy(), '`', TextType.CODE)
     nodes = split_nodes_links(nodes.copy())
     nodes = split_nodes_images(nodes.copy())
-    return nodes
+    return remove_empty_textnodes(nodes)
+
+def remove_empty_textnodes(nodes: list[TextNode]) -> list[TextNode]:
+    truncated_list = []
+    for node in nodes:
+        if node.text_type != TextType.TEXT:
+            truncated_list.append(node)
+        else:
+            if node.text is None or len(node.text) < 1:
+                continue
+            truncated_list.append(node)
+    return truncated_list
 
 
 def extract_markdown_images(content: str) -> tuple[str, str]: #not sure why but when pattern is loaded from constants.py it fails to match anything
@@ -167,29 +178,48 @@ def check_if_block_is_list(block: BlockNode, ordered: bool) -> bool:
             return False
     return True
 
+def detect_empty_node(node: HTMLNode) -> bool:
+    if node is None:
+        return True
+    if node.tag == '' or node.tag == None:
+        if node.value == '' or node.value == None:
+            return True
+    return False
+
 
 def markdown_to_html_node(markdown: str) -> ParentNode:
     blocks = [block_to_blocktype(block) for block in markdown_to_blocks(markdown)]
     children = []
     for block in blocks:
+        output = None
         if isinstance(block, HeaderNode):
-            children.append(LeafNode(f'h{block.header_size}', block.content))
+            output = ParentNode(f'h{block.header_size}', [convert_text_node_to_html_node(node) for node in text_to_textnodes(block.content)])
         elif isinstance(block, CodeNode):
             code = LeafNode('code', block.content)
-            children.append(ParentNode('pre', [code]))
+            output = ParentNode('pre', [code])
         elif isinstance(block, ListNode):
             list_items = []
             for line in block.lines:
                 child_nodes = [convert_text_node_to_html_node(node) for node in text_to_textnodes(line)]
                 list_items.append(ParentNode('li', child_nodes))
-            children.append(ParentNode('ol' if block.block_type == BlockType.ORDERED_LIST else 'ul', list_items))
+            output = ParentNode('ol' if block.block_type == BlockType.ORDERED_LIST else 'ul', list_items)
         elif isinstance(block, QuoteNode):
             child_nodes = [convert_text_node_to_html_node(node) for node in text_to_textnodes(block.content)]
-            children.append(ParentNode('blockquote', child_nodes))
+            output = ParentNode('blockquote', child_nodes)
         else:
             child_nodes = []
             text_nodes = text_to_textnodes(block.content.replace('\n', ' '))
             for node in text_nodes:
-                child_nodes.append(convert_text_node_to_html_node(node))
-            children.append(ParentNode('p', child_nodes))
+                htmlnode = convert_text_node_to_html_node(node)
+                if isinstance(htmlnode, LeafNode):
+                    if (htmlnode.tag == None or htmlnode.tag == '') and (htmlnode.value == None or htmlnode.value == ''):
+                        print(f'Empty leafnode found ({htmlnode})')
+                        continue
+                child_nodes.append(htmlnode)
+            output = ParentNode('p', child_nodes)
+        if detect_empty_node(output):
+            print(output)
+        else:
+            children.append(output)
+
     return ParentNode('div', children)

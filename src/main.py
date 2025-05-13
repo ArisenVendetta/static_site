@@ -49,7 +49,8 @@ def generate_page(from_path: str, template_path: str, destination_path: str, del
         os.remove(destination_path)
     dest_path = Path(destination_path)
     if not os.path.exists(dest_path.parent):
-        os.mkdir(dest_path.parent)
+        print(f'Creating directory: {dest_path.parent}')
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
     
     print("Attempting to generate new page:")
     print(f"\tfrom:\t\t{os.path.abspath(from_path)}")
@@ -64,6 +65,18 @@ def generate_page(from_path: str, template_path: str, destination_path: str, del
     with open(destination_path, 'w+') as output:
         output.write(updated_content)
 
+def generate_pages_recursive(from_path: str, template_path: str, destination_path: str) -> None:
+    content_files = os.listdir(from_path)
+    for content_file in content_files:
+        content_path = Path(os.path.join(from_path, content_file))
+        if os.path.isdir(content_path.absolute()):
+            generate_pages_recursive(content_path, template_path, os.path.join(destination_path, content_file))
+        else:
+            template_path = Path(template_path)
+            output_path = Path(os.path.join(destination_path, f'{content_path.stem}.html'))
+            if os.path.isdir(content_path.absolute()):
+                continue
+            generate_page(content_path.absolute(), template_path.absolute(), output_path.absolute())
     
 def open_and_read_content(source_file: str) -> str:
     if not os.path.exists(source_file):
@@ -79,14 +92,7 @@ def open_and_read_content(source_file: str) -> str:
 
 def main():
     copy_files_from_source_to_destination('static/', 'public/')
-    content_files = os.listdir('content/')
-    for content_file in content_files:
-        content_path = Path(os.path.join('content/', content_file))
-        template_path = Path('template.html')
-        output_path = Path(os.path.join('public/', f'{content_path.stem}.html'))
-        if os.path.isdir(content_path.absolute()):
-            continue
-        generate_page(content_path.absolute(), template_path.absolute(), output_path.absolute())
+    generate_pages_recursive('content/', 'template.html', 'public/')
 
 
 main()
